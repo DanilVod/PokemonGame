@@ -1,55 +1,102 @@
-import { Sprite, getBoundaries, useCanvas } from 'view/components'
-import { animateGame } from 'view/pages/Game/utils/animateGame'
+import { setInventory } from 'App'
+import { memo } from 'react'
+import tw from 'twin.macro'
+import { Boundary, useCanvas } from 'view/components'
+import { getSpecialMap } from 'view/components/domain'
 
-import { COLLISIONS_MAP } from './Game.constants'
-import { MAP_IMAGE, PLAYER_IMAGE } from './Game.image'
-import { setKeyboardNavigation } from './utils'
+import { Battle, getBattleSprites } from '../Battle'
+import {
+  BATTLE_ZONES_MAP,
+  COLLISIONS_MAP,
+  DEFAULT_GAME_SETTINGS,
+} from './Game.constants'
+import { CanvasInfo, GameSettings } from './Game.types'
+import { getGameSprites, setKeyboardNavigation, startGame } from './utils'
 
-export const Game = () => {
-  console.log('updated')
-  const canvasRef = useCanvas((ctx, canvas) => {
-    canvas.width = 1024
-    canvas.height = 576
-    const offset = { x: -735, y: -650 }
-    const boundaries = getBoundaries({
-      offset,
-      collisionMap: COLLISIONS_MAP,
-      ctx,
+export const Game = memo(
+  ({
+    height = DEFAULT_GAME_SETTINGS.height,
+    offset = DEFAULT_GAME_SETTINGS.offset,
+    width = DEFAULT_GAME_SETTINGS.width,
+    //@ts-ignore
+    setInv,
+  }: GameSettings) => {
+    const canvasRef = useCanvas((ctx, canvas) => {
+      canvas.width = width
+      canvas.height = height
+
+      const canvasInfo: CanvasInfo = {
+        canvas,
+        ctx,
+        offset,
+      }
+
+      const boundaries = getSpecialMap({
+        offset,
+        specialMap: COLLISIONS_MAP,
+        ctx,
+        classConstructor: Boundary,
+      })
+
+      const battleZones = getSpecialMap({
+        offset,
+        specialMap: BATTLE_ZONES_MAP,
+        ctx,
+        classConstructor: Boundary,
+      })
+
+      const keys = {
+        lastKey: '',
+        w: { pressed: false },
+        a: { pressed: false },
+        s: { pressed: false },
+        d: { pressed: false },
+      }
+
+      setKeyboardNavigation(keys)
+
+      const gameSprites = getBattleSprites({
+        canvas,
+        ctx,
+        offset,
+      })
+      fetch('https://pokeapi.co/api/v2/pokemon/bulbasaur')
+        .then(res => {
+          return res.json()
+        })
+        .then(res => {
+          setInventory({
+            pokemons: [
+              {
+                name: 'bulbasaur',
+                img: res.sprites.versions['generation-v']['black-white']
+                  .animated.front_default,
+                sprite: gameSprites.bulbasaurFront,
+              },
+            ],
+          })
+        })
+
+      startGame({
+        sprites: getGameSprites({ canvas, ctx, offset }),
+        boundaries,
+        battleZones,
+        keys,
+        canvasInfo,
+        //@ts-ignore
+        setInv,
+      })
     })
 
-    const background = new Sprite({
-      position: { x: offset.x, y: offset.y },
-      image: MAP_IMAGE,
-      ctx,
-    })
+    return (
+      <Container>
+        <Battle></Battle>
+        <canvas ref={canvasRef}> </canvas>
+      </Container>
+    )
+  },
+)
 
-    // const backgroundForeground = new Sprite({
-    //   position: { x: offset.x, y: offset.y },
-    //   image: mapImage,
-    // })
-
-    const player = new Sprite({
-      position: {
-        x: canvas.width / 2 - 192 / 4 / 2,
-        y: canvas.height / 2 - 68 / 2,
-      },
-      frames: { max: 4 },
-      image: PLAYER_IMAGE,
-      ctx,
-    })
-
-    const keys = {
-      lastKey: '',
-      w: { pressed: false },
-      a: { pressed: false },
-      s: { pressed: false },
-      d: { pressed: false },
-    }
-
-    setKeyboardNavigation(keys)
-
-    animateGame({ background, boundaries, player, keys })
-  })
-
-  return <canvas ref={canvasRef}> </canvas>
-}
+const Container = tw.div`
+  inline-block relative
+`

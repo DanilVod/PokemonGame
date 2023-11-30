@@ -1,4 +1,5 @@
-import { Position, Rectangle } from '../_domain'
+import { Position, Rectangle } from 'view/components/domain'
+
 import { BoundaryProps } from './Boundary.types'
 
 export class Boundary implements Rectangle {

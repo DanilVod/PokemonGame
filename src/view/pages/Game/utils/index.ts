@@ -1,2 +1,5 @@
 export * from './isColliding'
 export * from './setKeyboardNavigation'
+export * from './startGame'
+export * from './getGameSprites'
+export * from '../../Battle/utils/activateBattle'

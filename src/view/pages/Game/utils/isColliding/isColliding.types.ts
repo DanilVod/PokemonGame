@@ -1,4 +1,4 @@
-import { Rectangle } from 'view/components'
+import { Rectangle } from 'view/components/domain'
 
 export interface IsColliding {
   object: Rectangle

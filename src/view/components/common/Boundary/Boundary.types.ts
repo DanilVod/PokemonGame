@@ -1,4 +1,4 @@
-import { Position } from 'view/components/common/_domain'
+import { Position } from 'view/components/domain'
 
 import { Boundary } from './Boundary'
 
